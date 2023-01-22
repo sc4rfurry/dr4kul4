@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Subdomain Scanner</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <style>
+        body {
+            font-family: "VT323", monospace;
+            background-color: #000;
+            color: #0f0;
+        }
+        .emoji {
+            font-size: 1.5em;
+        }
+        input[type="text"] {
+            background-color: #333;
+            color: #0f0;
+            border-color: #0f0;
+        }
+        #submit-btn {
+            background-color: #0f0;
+            color: #000;
+            font-size: 22px;
+            font-weight: bolder;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="center-align">Subdomain Scanner - crt.sh<span class="emoji">🔍</span></h1>
+        <p style="color: darkkhaki;font-size: 22px;text-align: center;">A simple tool to scan subdomains of a website using <a href="https://crt.sh" target="_blank"><span style="color: deepskyblue;">crt.sh</span></a>.</p>
+        <div class="row">
+            <form class="col s12">
+                <div class="row">
+                    <div class="input-field col s12">
+                        <input id="domain" type="text" class="validate">
+                        <label for="domain"><span style="color:gold;font-size: 18px;font-weight: bold;font-style: italic;font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;">🪓 Domain</span></label>
+                    </div>
+                </div>
+                <div class="center-align">
+                    <a class="waves-effect waves-light btn" id="submit-btn"><i class="material-icons left"></i>Scan</a>
+                </div>
+            </form>
+        <br>
+            <div class="row">
+                <div class="col s12" style="color: aqua;text-align: center;">
+                    <h4 style="padding: 0px;color: aquamarine; text-align: center;font-size: xx-large;font-weight: bold;">Subdomains</script></h4>
+                    <br>
+                    <ul style="font-size: 25px;" id="subdomains"></ul>
+                </div>
+            </div>
+            <div class="center-align">
+                <p style="color: coral;" id="message" class="flow-text"></p>
+            </div>
+            <br>
+            <br>
+        </div>
+        <script>
+            $("#submit-btn").click(function () {
+                let domain = $("#domain").val();
+                let message = $("#message");
+                if (!domain) {
+                    message.text("Please enter a domain.");
+                    return;
+                }
+                message.text("💎 Scanning the website domain for subdomains, please wait because this might take a while.");
+                $.ajax({
+                    url: "proxy.php?domain=" + domain,
+                    success: function (res) {
+                        let subdomains = [];
+                        let subdomains_found = res.match(/(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]/g);
+                        if (subdomains_found) {
+                            for (let i in subdomains_found) {
+                                if (subdomains.indexOf(subdomains_found[i]) == -1 && subdomains_found[i].indexOf(domain) != -1 && subdomains_found[i] != domain) {
+                                    subdomains.push(subdomains_found[i]);
+                                }
+                            }
+                        }
+                        if (subdomains.length) {
+                            message.text(`⛩️ ${subdomains.length} subdomains found`);
+                            let subdomainsList = "";
+                            for (let subdomain of subdomains) {
+                                subdomainsList += `<li>${subdomain}</li>`;
+                            }
+                            $("#subdomains").html(subdomainsList);
+                        } else {
+                            message.text("No subdomains found.");
+                        }
+                    },
+                    error: function (err) {
+                        message.text("An error occurred while scanning the domain.");
+                    }
+                });
+            });
+        </script>
+    </div>
+</body>
+<footer class="page-footer" style="background-color: #333; padding: 0px; position: fixed; bottom: 0; width: 100%;">
+    <div class="footer-copyright">
+      <div class="container" style="color: chartreuse;text-align: center;font-size: 25px;font-weight: bolder;">
+      © 2023 Copyright - <a href="https://github.com/sc4rfurry" target="_blank">@sc4rfurry 💤</a>
+      </div>
+    </div>
+  </footer>
+</html>
