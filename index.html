@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Subdomain Scanner</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
@@ -11,74 +12,187 @@
             font-family: "VT323", monospace;
             background-color: #000;
             color: #0f0;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
         }
+
+        .container {
+            text-align: center;
+        }
+
         .emoji {
             font-size: 1.5em;
         }
+
         input[type="text"] {
             background-color: #333;
             color: #0f0;
             border-color: #0f0;
         }
+
         #submit-btn {
             background-color: #0f0;
             color: #000;
             font-size: 22px;
             font-weight: bolder;
         }
+
+        .subdomains-list {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .subdomains-list li {
+            margin: 5px 0;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        footer {
+            background-color: #333;
+            padding: 10px 0;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            text-align: center;
+            color: chartreuse;
+            font-size: 25px;
+            font-weight: bolder;
+        }
+
+        .export-widget {
+            position: fixed;
+            bottom: 80px; /* Adjusted to avoid collision with the footer */
+            right: 20px;
+            background-color: rgba(0, 0, 0, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transform: translateZ(0);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .export-widget.hidden {
+            transform: translateY(100px);
+            opacity: 0;
+        }
+
+        .export-widget button {
+            display: block;
+            margin: 10px 0;
+            background-color: #0f0;
+            color: #000;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            border-radius: 10px;
+        }
+
+        .export-widget button:hover {
+            background-color: #0a0;
+            transform: translateY(-5px);
+        }
+
+        .export-widget button:active {
+            background-color: #070;
+            transform: translateY(0);
+        }
+
+        .export-widget button:focus {
+            outline: none;
+            box-shadow: 0 0 10px #0f0;
+        }
+
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1 class="center-align">Subdomain Scanner - crt.sh<span class="emoji">🔍</span></h1>
-        <p style="color: darkkhaki;font-size: 22px;text-align: center;">A simple tool to scan subdomains of a website using <a href="https://crt.sh" target="_blank"><span style="color: deepskyblue;">crt.sh</span></a>.</p>
+        <p style="color: darkkhaki;font-size: 22px;">A simple tool to scan subdomains of a website
+            using <a href="https://crt.sh" target="_blank"><span style="color: deepskyblue;">crt.sh</span></a>.</p>
         <div class="row">
             <form class="col s12">
                 <div class="row">
                     <div class="input-field col s12">
                         <input id="domain" type="text" class="validate">
-                        <label for="domain"><span style="color:gold;font-size: 18px;font-weight: bold;font-style: italic;font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;">🪓 Domain</span></label>
+                        <label for="domain"><span
+                                style="color:gold;font-size: 18px;font-weight: bold;font-style: italic;font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;">🪓
+                                Domain</span></label>
                     </div>
                 </div>
                 <div class="center-align">
                     <a class="waves-effect waves-light btn" id="submit-btn"><i class="material-icons left"></i>Scan</a>
                 </div>
             </form>
-        <br>
+            <br>
             <div class="row">
-                <div class="col s12" style="color: aqua;text-align: center;">
-                    <h4 style="padding: 0px;color: aquamarine; text-align: center;font-size: xx-large;font-weight: bold;">Subdomains</script></h4>
+                <div class="col s12" style="color: aqua;">
+                    <h4 style="padding: 0px;color: aquamarine; font-size: xx-large;font-weight: bold;">
+                        Subdomains</h4>
                     <br>
-                    <ul style="font-size: 25px;" id="subdomains"></ul>
+                    <ul class="subdomains-list" id="subdomains"></ul>
                 </div>
             </div>
             <div class="center-align">
                 <p style="color: coral;" id="message" class="flow-text"></p>
             </div>
+            <div class="export-widget hidden">
+                <button id="export-json">Export JSON</button>
+                <button id="export-csv">Export CSV</button>
+                <button id="export-txt">Export TXT</button>
+                <button id="copy-results">Copy Results</button>
+            </div>
             <br>
             <br>
         </div>
         <script>
-            $("#submit-btn").click(function () {
-                let domain = $("#domain").val();
+            function isValidDomain(domain) {
+                const domainPattern = /^(?!:\/\/)([a-zA-Z0-9-_]+\.)*[a-zA-Z0-9][a-zA-Z0-9-_]+\.[a-zA-Z]{2,11}?$/;
+                return domainPattern.test(domain);
+            }
+
+            function startScan() {
+                let domain = $("#domain").val().trim();
                 let message = $("#message");
+                let exportWidget = $(".export-widget");
                 if (!domain) {
                     message.text("Please enter a domain.");
                     return;
                 }
+                if (!isValidDomain(domain)) {
+                    message.text("Please enter a valid domain.");
+                    return;
+                }
                 message.text("💎 Scanning the website domain for subdomains, please wait because this might take a while.");
                 $.ajax({
-                    url: "proxy.php?domain=" + domain,
+                    url: "proxy.php?domain=" + encodeURIComponent(domain),
                     success: function (res) {
-                        let subdomains = [];
-                        let subdomains_found = res.match(/(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]/g);
-                        if (subdomains_found) {
-                            for (let i in subdomains_found) {
-                                if (subdomains.indexOf(subdomains_found[i]) == -1 && subdomains_found[i].indexOf(domain) != -1 && subdomains_found[i] != domain) {
-                                    subdomains.push(subdomains_found[i]);
-                                }
-                            }
+                        let response = JSON.parse(res);
+                        if (response.error) {
+                            message.text(response.error);
+                            exportWidget.addClass("hidden");
+                            return;
                         }
+                        let subdomains = response;
                         if (subdomains.length) {
                             message.text(`⛩️ ${subdomains.length} subdomains found`);
                             let subdomainsList = "";
@@ -86,23 +200,85 @@
                                 subdomainsList += `<li>${subdomain}</li>`;
                             }
                             $("#subdomains").html(subdomainsList);
+                            exportWidget.removeClass("hidden");
                         } else {
                             message.text("No subdomains found.");
+                            exportWidget.addClass("hidden");
                         }
                     },
                     error: function (err) {
                         message.text("An error occurred while scanning the domain.");
+                        exportWidget.addClass("hidden");
                     }
                 });
+            }
+
+            function exportData(format) {
+                let subdomains = $("#subdomains li").map(function () {
+                    return $(this).text();
+                }).get();
+
+                let dataStr;
+                if (format === 'json') {
+                    dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(subdomains, null, 2));
+                } else if (format === 'csv') {
+                    dataStr = "data:text/csv;charset=utf-8," + encodeURIComponent(subdomains.join("\n"));
+                } else if (format === 'txt') {
+                    dataStr = "data:text/plain;charset=utf-8," + encodeURIComponent(subdomains.join("\n"));
+                }
+
+                let downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", `subdomains.${format}`);
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+            }
+
+            function copyResults() {
+                let subdomains = $("#subdomains li").map(function () {
+                    return $(this).text();
+                }).get().join("\n");
+
+                navigator.clipboard.writeText(subdomains).then(function () {
+                    alert("Subdomains copied to clipboard!");
+                }, function (err) {
+                    alert("Failed to copy subdomains: ", err);
+                });
+            }
+
+            $("#submit-btn").click(function (e) {
+                e.preventDefault();
+                startScan();
+            });
+
+            $("#domain").keypress(function (e) {
+                if (e.which == 13) {
+                    e.preventDefault();
+                    startScan();
+                }
+            });
+
+            $("#export-json").click(function () {
+                exportData('json');
+            });
+
+            $("#export-csv").click(function () {
+                exportData('csv');
+            });
+
+            $("#export-txt").click(function () {
+                exportData('txt');
+            });
+
+            $("#copy-results").click(function () {
+                copyResults();
             });
         </script>
     </div>
+    <footer>
+        © 2024 Copyright - <a href="https://github.com/sc4rfurry" target="_blank">@sc4rfurry 💤</a>
+    </footer>
 </body>
-<footer class="page-footer" style="background-color: #333; padding: 0px; position: fixed; bottom: 0; width: 100%;">
-    <div class="footer-copyright">
-      <div class="container" style="color: chartreuse;text-align: center;font-size: 25px;font-weight: bolder;">
-      © 2023 Copyright - <a href="https://github.com/sc4rfurry" target="_blank">@sc4rfurry 💤</a>
-      </div>
-    </div>
-  </footer>
+
 </html>

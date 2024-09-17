@@ -20,9 +20,9 @@ A simple Subdomain Enumeration using `crt.sh` with a nice Static Web Interface. 
 # Getting Started
 
 + Clone the repository 
-+ Copy code
 `git clone https://github.com/sc4rfurry/dr4kul4.git`
 + Start your server (Xampp/Apache2)
+    - To run the server locally make sure you have PHP installed on your system, and run the command `php -S 0.0.0.0:8000`
 + Open the index.html file in your browser `http://Server_Ip:Server_Port`
 + Enter the domain you want to enumerate
 + Click on Scan button
